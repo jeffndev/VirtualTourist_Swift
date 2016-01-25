@@ -13,6 +13,9 @@
 		BD1156D51C52BAD40024278D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BD1156D31C52BAD40024278D /* LaunchScreen.storyboard */; };
 		BD1156DD1C52C72E0024278D /* PhotoAlbumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1156DC1C52C72E0024278D /* PhotoAlbumViewController.swift */; };
 		BD1156DF1C52C8CF0024278D /* MapLocationsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1156DE1C52C8CF0024278D /* MapLocationsViewController.swift */; };
+		BD70FE0C1C569B96008CD528 /* Pin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0B1C569B96008CD528 /* Pin.swift */; };
+		BD70FE0E1C569DC0008CD528 /* CoreDataStackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */; };
+		BD70FE101C569E51008CD528 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0F1C569E51008CD528 /* Photo.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +27,9 @@
 		BD1156D61C52BAD40024278D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BD1156DC1C52C72E0024278D /* PhotoAlbumViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PhotoAlbumViewController.swift; sourceTree = "<group>"; };
 		BD1156DE1C52C8CF0024278D /* MapLocationsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapLocationsViewController.swift; sourceTree = "<group>"; };
+		BD70FE0B1C569B96008CD528 /* Pin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pin.swift; sourceTree = "<group>"; };
+		BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStackManager.swift; sourceTree = "<group>"; };
+		BD70FE0F1C569E51008CD528 /* Photo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +69,9 @@
 				BD1156D61C52BAD40024278D /* Info.plist */,
 				BD1156DC1C52C72E0024278D /* PhotoAlbumViewController.swift */,
 				BD1156DE1C52C8CF0024278D /* MapLocationsViewController.swift */,
+				BD70FE0B1C569B96008CD528 /* Pin.swift */,
+				BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */,
+				BD70FE0F1C569E51008CD528 /* Photo.swift */,
 			);
 			path = VirtualTourist;
 			sourceTree = "<group>";
@@ -138,9 +147,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BD70FE101C569E51008CD528 /* Photo.swift in Sources */,
 				BD1156CB1C52BAD40024278D /* AppDelegate.swift in Sources */,
 				BD1156DF1C52C8CF0024278D /* MapLocationsViewController.swift in Sources */,
 				BD1156DD1C52C72E0024278D /* PhotoAlbumViewController.swift in Sources */,
+				BD70FE0E1C569DC0008CD528 /* CoreDataStackManager.swift in Sources */,
+				BD70FE0C1C569B96008CD528 /* Pin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -290,6 +302,7 @@
 				BD1156DB1C52BAD40024278D /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

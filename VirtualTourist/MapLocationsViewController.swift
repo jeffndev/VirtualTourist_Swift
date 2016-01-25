@@ -13,6 +13,8 @@ class MapLocationsViewController: UIViewController {
 
     @IBOutlet weak var mapView: MKMapView!
     
+    let photoAlbumViewControllerStoryboardID = "PhotoAlbum"
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -21,6 +23,19 @@ class MapLocationsViewController: UIViewController {
         let longPress = UILongPressGestureRecognizer(target: self, action: "longPressAction:")
         longPress.minimumPressDuration = 1.0
         mapView.addGestureRecognizer(longPress)
+        
+//        Span Code sample:
+//        let theSpan:MKCoordinateSpan = MKCoordinateSpanMake(0.01 , 0.01)
+//        let location:CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 45.612125, longitude: 22.948280)
+//        let theRegion:MKCoordinateRegion = MKCoordinateRegionMake(location, theSpan)
+    }
+    
+    func loadMapState() {
+        
+    }
+    func saveMapState() {
+        //NSUserDefaults.standardUserDefaults().setFloat(<#T##value: Float##Float#>, forKey: <#T##String#>)
+        
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
@@ -42,8 +57,8 @@ class MapLocationsViewController: UIViewController {
     }
     
     @IBAction func tempToAlbum(sender: AnyObject) {
-        
-        let albumController = storyboard?.instantiateViewControllerWithIdentifier("PhotoAlbum") as! PhotoAlbumViewController
+        //TODO: DELETE ME...just temporary code
+        let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
         let newBackNavBtn = UIBarButtonItem()
         newBackNavBtn.title = "OK"
         navigationItem.backBarButtonItem = newBackNavBtn
@@ -64,7 +79,20 @@ class MapLocationsViewController: UIViewController {
 
 extension MapLocationsViewController: MKMapViewDelegate {
     
-    
+    func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
+        let alert = UIAlertController(title: "Annotatation tapped", message: "You tapped the pin", preferredStyle: .Alert)
+        let okAction = UIAlertAction(title: "OK", style: .Default, handler: nil)
+        alert.addAction(okAction)
+        self.presentViewController(alert, animated: true, completion: nil)
+        //TODO: figure out how to get this called...
+        //TODO: get view controller
+        let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
+        let newBackNavBtn = UIBarButtonItem()
+        newBackNavBtn.title = "OK"
+        navigationItem.backBarButtonItem = newBackNavBtn
+        navigationController?.pushViewController(albumController, animated: true)
+        
+    }
     
     
     
