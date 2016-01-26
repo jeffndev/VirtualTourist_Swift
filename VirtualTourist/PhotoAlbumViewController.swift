@@ -9,8 +9,6 @@
 import UIKit
 
 class PhotoAlbumViewController: UIViewController {
-
-    //var images = [String]()
     var pin: Pin!
     
     @IBOutlet weak var noImagesLabel: UILabel!
@@ -19,7 +17,6 @@ class PhotoAlbumViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //images.append("HI")
         guard let pin = pin else {
             setNoPhotosUIState(true)
             return
@@ -33,13 +30,12 @@ class PhotoAlbumViewController: UIViewController {
         } else {
             setNoPhotosUIState(false)
         }
-        // Do any additional setup after loading the view.
-        
     }
     func setNoPhotosUIState(noPhotos: Bool) {
         noImagesLabel.hidden = !noPhotos
         photoCollectionView.hidden = noPhotos
     }
+    
     /*
     // MARK: - Navigation
 

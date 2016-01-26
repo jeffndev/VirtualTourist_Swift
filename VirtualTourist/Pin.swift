@@ -10,6 +10,11 @@ import CoreData
 
 class Pin: NSManagedObject {
     
+    struct Keys {
+        static let Longitude = "longitude"
+        static let Latitude = "latitude"
+    }
+    
     @NSManaged var longitude: NSNumber //really a Double
     @NSManaged var latitude: NSNumber //really a Double
     @NSManaged var photos: [Photo]?

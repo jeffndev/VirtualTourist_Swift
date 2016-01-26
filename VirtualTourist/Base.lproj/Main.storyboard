@@ -45,13 +45,7 @@
                             <constraint firstAttribute="trailing" secondItem="43w-qN-fPi" secondAttribute="trailing" id="tjC-KE-vbE"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" id="L6V-k9-Jfd">
-                        <barButtonItem key="rightBarButtonItem" title="Item" id="amz-Vc-tIX">
-                            <connections>
-                                <action selector="tempToAlbum:" destination="sLn-Om-Eou" id="d2T-PF-NJN"/>
-                            </connections>
-                        </barButtonItem>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="L6V-k9-Jfd"/>
                     <connections>
                         <outlet property="mapView" destination="43w-qN-fPi" id="nuq-bS-aXb"/>
                         <segue destination="3me-Ka-u1a" kind="show" identifier="photoAlbumPlaceholder" id="JUP-d8-n1b"/>

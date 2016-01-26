@@ -16,6 +16,7 @@
 		BD70FE0C1C569B96008CD528 /* Pin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0B1C569B96008CD528 /* Pin.swift */; };
 		BD70FE0E1C569DC0008CD528 /* CoreDataStackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */; };
 		BD70FE101C569E51008CD528 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD70FE0F1C569E51008CD528 /* Photo.swift */; };
+		BD96C2041C57FFFE006A4DB6 /* Model.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = BD96C2021C57FFFE006A4DB6 /* Model.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +31,7 @@
 		BD70FE0B1C569B96008CD528 /* Pin.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Pin.swift; sourceTree = "<group>"; };
 		BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CoreDataStackManager.swift; sourceTree = "<group>"; };
 		BD70FE0F1C569E51008CD528 /* Photo.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
+		BD96C2031C57FFFE006A4DB6 /* Model.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Model.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -72,6 +74,7 @@
 				BD70FE0B1C569B96008CD528 /* Pin.swift */,
 				BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */,
 				BD70FE0F1C569E51008CD528 /* Photo.swift */,
+				BD96C2021C57FFFE006A4DB6 /* Model.xcdatamodeld */,
 			);
 			path = VirtualTourist;
 			sourceTree = "<group>";
@@ -150,6 +153,7 @@
 				BD70FE101C569E51008CD528 /* Photo.swift in Sources */,
 				BD1156CB1C52BAD40024278D /* AppDelegate.swift in Sources */,
 				BD1156DF1C52C8CF0024278D /* MapLocationsViewController.swift in Sources */,
+				BD96C2041C57FFFE006A4DB6 /* Model.xcdatamodeld in Sources */,
 				BD1156DD1C52C72E0024278D /* PhotoAlbumViewController.swift in Sources */,
 				BD70FE0E1C569DC0008CD528 /* CoreDataStackManager.swift in Sources */,
 				BD70FE0C1C569B96008CD528 /* Pin.swift in Sources */,
@@ -305,6 +309,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		BD96C2021C57FFFE006A4DB6 /* Model.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				BD96C2031C57FFFE006A4DB6 /* Model.xcdatamodel */,
+			);
+			currentVersion = BD96C2031C57FFFE006A4DB6 /* Model.xcdatamodel */;
+			path = Model.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = BD1156BF1C52BAD40024278D /* Project object */;
 }
