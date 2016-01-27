@@ -7,16 +7,30 @@
 //
 
 import UIKit
+import MapKit
+import CoreData
 
 class PhotoAlbumViewController: UIViewController {
+    private let cellReuseIdentifier = "AlbumCell"
+    private let sectionInsets = UIEdgeInsets(top: 50.0, left: 20.0, bottom: 50.0, right: 20.0)
+    
     var pin: Pin!
     
+    @IBOutlet weak var mapView: MKMapView!
     @IBOutlet weak var noImagesLabel: UILabel!
     
     @IBOutlet weak var photoCollectionView: UICollectionView!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+    }
+    func setNoPhotosUIState(noPhotos: Bool) {
+        noImagesLabel.hidden = !noPhotos
+        photoCollectionView.hidden = noPhotos
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
         guard let pin = pin else {
             setNoPhotosUIState(true)
             return
@@ -30,12 +44,17 @@ class PhotoAlbumViewController: UIViewController {
         } else {
             setNoPhotosUIState(false)
         }
+        //
+        if pin.photos == nil || pin.photos!.isEmpty {
+            //go get em...
+            let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
+                FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
+            let task = FlickrProvider.sharedInstance.taskForResource(FlickrProvider.Resources.SearchPhotos, parameters: parameters) { result, error in
+                //TODO: parse the result through a map, attach the pin to each photo
+                print(result)
+            }
+        }
     }
-    func setNoPhotosUIState(noPhotos: Bool) {
-        noImagesLabel.hidden = !noPhotos
-        photoCollectionView.hidden = noPhotos
-    }
-    
     /*
     // MARK: - Navigation
 
