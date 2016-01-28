@@ -38,7 +38,27 @@ class MapLocationsViewController: UIViewController {
 //        let theSpan:MKCoordinateSpan = MKCoordinateSpanMake(0.01 , 0.01)
 //        let location:CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 45.612125, longitude: 22.948280)
 //        let theRegion:MKCoordinateRegion = MKCoordinateRegionMake(location, theSpan)
+        do {
+            try fetchedResultsController.performFetch()
+        } catch {}
+        fetchedResultsController.delegate = self
     }
+    
+    lazy var fetchedResultsController: NSFetchedResultsController = {
+        
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "latitude", ascending: true)]
+        
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+            managedObjectContext: self.sharedContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil)
+        
+        return fetchedResultsController
+        
+    }()
+    
     var sharedContext: NSManagedObjectContext {
         return CoreDataStackManager.sharedInstance.managedObjectContext
     }
@@ -64,14 +84,17 @@ class MapLocationsViewController: UIViewController {
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
-        let touchPoint = gestureRecognizer.locationInView(mapView)
-        let coord: CLLocationCoordinate2D = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
-        let newAnnotation = MKPointAnnotation()
-        newAnnotation.coordinate = coord
-        //let dictionary = [Pin.Keys.Latitude: coord.latitude, Pin.Keys.Longitude: coord.longitude]
-        //let _ = Pin(dictionary: dictionary, context: sharedContext)
-        //CoreDataStackManager.sharedInstance.saveContext()
-        mapView.addAnnotation(newAnnotation)
+        if gestureRecognizer.state == .Ended {
+            print("long press received")
+            let touchPoint = gestureRecognizer.locationInView(mapView)
+            let coord: CLLocationCoordinate2D = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
+            let newAnnotation = MKPointAnnotation()
+            newAnnotation.coordinate = coord
+            let dictionary = [Pin.Keys.Latitude: coord.latitude, Pin.Keys.Longitude: coord.longitude]
+            let _ = Pin(dictionary: dictionary, context: sharedContext)
+            //CoreDataStackManager.sharedInstance.saveContext()
+            mapView.addAnnotation(newAnnotation)
+        }
     }
     
 //    @IBAction func tempToAlbum(sender: AnyObject) {
@@ -83,25 +106,15 @@ class MapLocationsViewController: UIViewController {
 //        navigationController?.pushViewController(albumController, animated: true)
 //    }
 
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepareForSegue(segue: UIStoryboardSegue, sender: AnyObject?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
-    }
-    */
-
 }
 
 extension MapLocationsViewController: MKMapViewDelegate {
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-        let alert = UIAlertController(title: "Annotatation tapped", message: "You tapped the pin", preferredStyle: .Alert)
-        let okAction = UIAlertAction(title: "OK", style: .Default, handler: nil)
-        alert.addAction(okAction)
-        self.presentViewController(alert, animated: true, completion: nil)
+//        let alert = UIAlertController(title: "Annotatation tapped", message: "You tapped the pin", preferredStyle: .Alert)
+//        let okAction = UIAlertAction(title: "OK", style: .Default, handler: nil)
+//        alert.addAction(okAction)
+//        self.presentViewController(alert, animated: true, completion: nil)
         
         let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
         guard let clickedPin = view.annotation else {
@@ -120,8 +133,9 @@ extension MapLocationsViewController: MKMapViewDelegate {
             print("no pins returned from fetch after pin tap: \(error.localizedDescription)")
             return
         }
-        assert(fetchedPins.count == 1, "Pins fetch should be 1, instead we got: \(fetchedPins.count)")
+        assert(fetchedPins.count == 1, "Pins fetch should be 1, instead we got: \(fetchedPins.count). Note total pin count: \(mapView.annotations.count)")
         albumController.pin = fetchedPins.first
+        
         let newBackNavBtn = UIBarButtonItem()
         newBackNavBtn.title = "OK"
         navigationItem.backBarButtonItem = newBackNavBtn
@@ -149,10 +163,56 @@ extension MapLocationsViewController: MKMapViewDelegate {
         else {
             pinView!.annotation = annotation
         }
-        
         return pinView
-
     }
+}
+
+extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
     
     
+    func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+        
+        switch(type){
+        case .Insert:
+            if let pin = anObject as? Pin {
+                print("Inserting additional pin: lat (\(pin.latitude) lon(\(pin.longitude)))")
+                if pin.photos.isEmpty {
+                    //go fetch photos...
+                    FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
+//                    let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
+//                        FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
+//                    let task = FlickrProvider.sharedInstance.getPagesTaskForSearch(searchParameters: parameters) { page, error in
+//                        guard error == nil else {
+//                            print("Error retrieving data page for images: \(error)")
+//                            return
+//                        }
+//                        guard let page = page else {
+//                            print("Calculated data page come up empty")
+//                            return
+//                        }
+//                        pin.photosTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
+//                            guard error == nil else {
+//                                print("Error retrieving Photos for location: \(error)")
+//                                return
+//                            }
+//                            guard let photosDictionary = result as? [[String: AnyObject]] else {
+//                                print("Photos data came up empty")
+//                                return
+//                            }
+//                            let photos: [Photo] = photosDictionary.map() {
+//                                let photo = Photo(dictionary: $0, context: self.sharedContext)
+//                                photo.locationPin = pin
+//                                return photo
+//                            }
+//                        }
+//                    }
+//                    //pin.photosLoading = true
+//                    print("fetching photos in map locations view")
+//                    pin.photosTask = task
+                }
+            }
+        default:
+            break
+        }
+    }
 }

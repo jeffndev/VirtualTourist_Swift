@@ -80,7 +80,11 @@
                                 </constraints>
                                 <items>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="aQh-RD-Szp"/>
-                                    <barButtonItem title="New Collection" id="y5a-sy-ol9"/>
+                                    <barButtonItem title="New Collection" id="y5a-sy-ol9">
+                                        <connections>
+                                            <action selector="newCollectionAction:" destination="3me-Ka-u1a" id="8ZN-7k-c1A"/>
+                                        </connections>
+                                    </barButtonItem>
                                     <barButtonItem style="plain" systemItem="flexibleSpace" id="bif-dA-AtS"/>
                                 </items>
                             </toolbar>
@@ -98,22 +102,40 @@
                                 <rect key="frame" x="0.0" y="206" width="600" height="345"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="D4y-Fo-8CT">
-                                    <size key="itemSize" width="50" height="50"/>
+                                    <size key="itemSize" width="200" height="200"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
                                     <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
                                 </collectionViewFlowLayout>
                                 <cells>
-                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="AlbumCell" id="qMt-pY-1Ph">
-                                        <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="AlbumCell" id="qMt-pY-1Ph" customClass="PhotoAlbumCell" customModule="VirtualTourist" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="200" height="200"/>
                                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         <view key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center">
-                                            <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="200" height="200"/>
                                             <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="1Wk-ml-5eF">
+                                                    <rect key="frame" x="5" y="5" width="190" height="190"/>
+                                                </imageView>
+                                            </subviews>
                                             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                                         </view>
+                                        <constraints>
+                                            <constraint firstItem="1Wk-ml-5eF" firstAttribute="top" secondItem="qMt-pY-1Ph" secondAttribute="top" constant="5" id="8oz-5T-eGb"/>
+                                            <constraint firstItem="1Wk-ml-5eF" firstAttribute="leading" secondItem="qMt-pY-1Ph" secondAttribute="leading" constant="5" id="B5b-f7-ak1"/>
+                                            <constraint firstAttribute="bottom" secondItem="1Wk-ml-5eF" secondAttribute="bottom" constant="5" id="eKi-jj-EuC"/>
+                                            <constraint firstAttribute="trailing" secondItem="1Wk-ml-5eF" secondAttribute="trailing" constant="5" id="jpc-Bo-s6P"/>
+                                        </constraints>
+                                        <connections>
+                                            <outlet property="imageView" destination="1Wk-ml-5eF" id="qED-MB-mUb"/>
+                                        </connections>
                                     </collectionViewCell>
                                 </cells>
+                                <connections>
+                                    <outlet property="dataSource" destination="3me-Ka-u1a" id="BeK-nN-lsq"/>
+                                    <outlet property="delegate" destination="3me-Ka-u1a" id="p3d-zS-LZE"/>
+                                </connections>
                             </collectionView>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>

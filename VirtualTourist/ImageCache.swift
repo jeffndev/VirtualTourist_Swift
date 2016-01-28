@@ -51,8 +51,6 @@ class ImageCache {
             do {
                 try NSFileManager.defaultManager().removeItemAtPath(path)
             } catch _ {}
-            
-            return
         }
         
         // Otherwise, keep the image in memory
@@ -66,8 +64,13 @@ class ImageCache {
     // MARK: - Helper
     
     func pathForIdentifier(identifier: String) -> String {
+        var mutableIdentifier = identifier
+        if !identifier.hasSuffix(".jpg") {
+            mutableIdentifier = "\(identifier).jpg"
+        }
+        print("localImagePath: \(mutableIdentifier)")
         let documentsDirectoryURL: NSURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
-        let fullURL = documentsDirectoryURL.URLByAppendingPathComponent(identifier)
+        let fullURL = documentsDirectoryURL.URLByAppendingPathComponent(mutableIdentifier)
         
         return fullURL.path!
     }

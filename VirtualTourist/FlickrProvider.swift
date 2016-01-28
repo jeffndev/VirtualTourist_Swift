@@ -7,35 +7,163 @@
 //
 
 import Foundation
+import CoreData
 
 class FlickrProvider {
     typealias CompletionHander = (result: AnyObject!, error: NSError?) -> Void
     
     static let sharedInstance = FlickrProvider()
+    struct Caches {
+        static let imageCache = ImageCache()
+    }
     
     private var session: NSURLSession {
         return NSURLSession.sharedSession()
     }
-    // MARK: - All purpose task method for data
-    func taskForResource(resource: String, parameters: [String : AnyObject], completionHandler: CompletionHander) -> NSURLSessionDataTask {
+    
+    
+    func getPhotos(pin: Pin, dataContext: NSManagedObjectContext) {
+        let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
+            FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
+        let task = getPagesTaskForSearch(searchParameters: parameters) { page, error in
+            guard error == nil else {
+                print("Error retrieving data page for images: \(error)")
+                return
+            }
+            guard let page = page else {
+                print("Calculated data page come up empty")
+                return
+            }
+            pin.photosTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
+                guard error == nil else {
+                    print("Error retrieving Photos for location: \(error)")
+                    return
+                }
+                guard let photosDictionary = result as? [[String: AnyObject]] else {
+                    print("Photos data came up empty")
+                    return
+                }
+                let _: [Photo] = photosDictionary.map() {
+                    let photo = Photo(dictionary: $0, context: dataContext)
+                    photo.locationPin = pin
+                    return photo
+                }
+            }
+        }
+        //pin.photosLoading = true
+        print("fetching photos in map locations view")
+        pin.photosTask = task
+    }
+    
+    
+    
+    func getPagesTaskForSearch(searchParameters parameters: [String: AnyObject], completion: (page: Int?, error: NSError?) -> Void) -> NSURLSessionDataTask {
         var mutableParameters = parameters
-        //var mutableResource = resource
         
         //Flickr uses a get parameter to specify the resource, as the "method" parameter
-        mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = resource
-        // Add in the API Key
-        mutableParameters[FlickrProvider.Keys.ApiKeyParameter] = Constants.ApiKey
+        mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
         
-        let EXTRAS = "url_m"
+        //TODO: possibly move these to better, more logical location?
+        let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
         let SAFE_SEARCH = "1"
         let DATA_FORMAT = "json"
         let NO_JSON_CALLBACK = "1"
-        mutableParameters[FlickrProvider.Keys.ExtrasParameter] = EXTRAS
+        let PER_PAGE = 18
+        
+        mutableParameters[FlickrProvider.Keys.ExtrasParameter] = EXTRAS_MEDIUM_IMAGE_PATH
         mutableParameters[FlickrProvider.Keys.SafeSearchParameter] = SAFE_SEARCH
         mutableParameters[FlickrProvider.Keys.DataFormatParameter] = DATA_FORMAT
         mutableParameters[FlickrProvider.Keys.NoJSONCallbackParameter] = NO_JSON_CALLBACK
+        mutableParameters[FlickrProvider.Keys.PerPageParemeter] = PER_PAGE
         
-        let urlString = Constants.BaseUrlSSL + resource + FlickrProvider.escapedParameters(mutableParameters)
+        let task = taskForResource(nil, parameters: mutableParameters) { result, error in
+            guard error == nil else {
+                completion(page: nil, error: error)
+                return
+            }
+            /*Did Flickr return an error (stat != ok)? */
+            guard let stat = result["stat"] as? String where stat == "ok" else {
+                print("Flickr API returned an error. See error code and message in \(result)")
+                return
+            }
+            //Parse out the initial JSON, and implement retrieval algorithm on the data
+            guard let photosInfo = result.valueForKey("photos") as? [String: AnyObject] else {
+                let err = NSError(domain: "Cannot parse out photos information in:\n\(result)", code: 0, userInfo: nil)
+                completion(page: nil, error: err)
+                return
+            }
+            
+            guard let pages = photosInfo["pages"] as? Int where pages > 0 else {
+                let err = NSError(domain: "Cannot parse out pages from photos information in:\n\(result)", code: 0, userInfo: nil)
+                completion(page: nil, error: err)
+                return
+            }
+            let randomPage = Int(arc4random_uniform(UInt32(pages)) + 1)
+            completion(page: randomPage, error: nil)
+        }
+        return task
+    }
+    
+    func searchForPhotosWithPageTask(page: Int,searchParameters parameters: [String: AnyObject], completion: CompletionHander) -> NSURLSessionDataTask {
+        var mutableParameters = parameters
+        
+        //Flickr uses a get parameter to specify the resource, as the "method" parameter
+        mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
+        
+        //TODO: possibly move these to better, more logical location?
+        let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
+        let SAFE_SEARCH = "1"
+        let DATA_FORMAT = "json"
+        let NO_JSON_CALLBACK = "1"
+        let PER_PAGE = 18
+        
+        mutableParameters[FlickrProvider.Keys.ExtrasParameter] = EXTRAS_MEDIUM_IMAGE_PATH
+        mutableParameters[FlickrProvider.Keys.SafeSearchParameter] = SAFE_SEARCH
+        mutableParameters[FlickrProvider.Keys.DataFormatParameter] = DATA_FORMAT
+        mutableParameters[FlickrProvider.Keys.NoJSONCallbackParameter] = NO_JSON_CALLBACK
+        mutableParameters[FlickrProvider.Keys.PerPageParemeter] = PER_PAGE
+        mutableParameters[FlickrProvider.Keys.PageNumberParameter] = page
+        
+        let task = taskForResource(nil, parameters: mutableParameters) { result, error in
+            guard error == nil else {
+                completion(result: nil, error: error)
+                return
+            }
+            /*Did Flickr return an error (stat != ok)? */
+            guard let stat = result["stat"] as? String where stat == "ok" else {
+                print("Flickr API returned an error. See error code and message in \(result)")
+                return
+            }
+            //Parse out the initial JSON, and implement retrieval algorithm on the data
+            guard let photosInfo = result.valueForKey("photos") as? [String: AnyObject] else {
+                let err = NSError(domain: "Cannot parse out photos information in:\n\(result)", code: 0, userInfo: nil)
+                completion(result: nil, error: err)
+                return
+            }
+            guard let photos = photosInfo["photo"] as? [[String: AnyObject]] else {
+                let err = NSError(domain: "Cannot parse out photos array in:\n\(result)", code: 0, userInfo: nil)
+                completion(result: nil, error: err)
+                return
+            }
+            completion(result: photos, error: nil)
+        }
+        
+        return task
+    }
+    
+    
+    
+    // MARK: - All purpose task method for data
+    func taskForResource(resource: String?, parameters: [String : AnyObject], completionHandler: CompletionHander) -> NSURLSessionDataTask {
+        var mutableParameters = parameters
+        //var mutableResource = resource
+        
+                // Add in the API Key
+        mutableParameters[FlickrProvider.Keys.ApiKeyParameter] = Constants.ApiKey
+        
+        
+        
+        let urlString = Constants.BaseUrlSSL + (resource ?? "") + FlickrProvider.escapedParameters(mutableParameters)
         let url = NSURL(string: urlString)!
         let request = NSURLRequest(URL: url)
         
@@ -44,6 +172,7 @@ class FlickrProvider {
         let task = session.dataTaskWithRequest(request) {data, response, downloadError in
             
             if let error = downloadError {
+                //TODO: need to fix this..
                 let newError = FlickrProvider.errorForData(data, response: response, error: error)
                 completionHandler(result: nil, error: newError)
             } else {
@@ -58,14 +187,12 @@ class FlickrProvider {
     
     // MARK: - All purpose task method for images
     
-    func taskForImageWithSize(size: String, filePath: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
+    func taskForImage(remotePath: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
         
-        let baseURL = NSURL(string: Constants.BaseUrlSSL)!
-        let url = baseURL.URLByAppendingPathComponent(size).URLByAppendingPathComponent(filePath)
+        let baseURL = NSURL(string: remotePath)!
+        print(baseURL)
         
-        print(url)
-        
-        let request = NSURLRequest(URL: url)
+        let request = NSURLRequest(URL: baseURL)
         
         let task = session.dataTaskWithRequest(request) {data, response, downloadError in
             
@@ -111,7 +238,7 @@ class FlickrProvider {
         
         do {
             let parsedResult = try NSJSONSerialization.JSONObjectWithData(data!, options: NSJSONReadingOptions.AllowFragments)
-            
+            print(parsedResult)
             if let parsedResult = parsedResult as? [String : AnyObject], errorMessage = parsedResult[FlickrProvider.Keys.ErrorStatusMessage] as? String {
                 let userInfo = [NSLocalizedDescriptionKey : errorMessage]
                 return NSError(domain: "TMDB Error", code: 1, userInfo: userInfo)
@@ -130,6 +257,7 @@ class FlickrProvider {
         let parsedResult: AnyObject?
         do {
             parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments)
+            //print(parsedResult)
         } catch let error as NSError {
             parsingError = error
             parsedResult = nil

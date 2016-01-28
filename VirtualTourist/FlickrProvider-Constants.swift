@@ -31,5 +31,7 @@ extension FlickrProvider {
         static let ExtrasParameter = "extras"
         static let DataFormatParameter = "format"
         static let NoJSONCallbackParameter = "nojsoncallback"
+        static let PerPageParemeter = "per_page"
+        static let PageNumberParameter = "page"
     }
 }
