@@ -25,7 +25,7 @@ class FlickrProvider {
     func getPhotos(pin: Pin, dataContext: NSManagedObjectContext) {
         let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
             FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
-        let task = getPagesTaskForSearch(searchParameters: parameters) { page, error in
+        getPagesTaskForSearch(searchParameters: parameters) { page, error in
             guard error == nil else {
                 print("Error retrieving data page for images: \(error)")
                 return
@@ -34,7 +34,7 @@ class FlickrProvider {
                 print("Calculated data page come up empty")
                 return
             }
-            pin.photosTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
+            FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
                 guard error == nil else {
                     print("Error retrieving Photos for location: \(error)")
                     return
@@ -50,9 +50,7 @@ class FlickrProvider {
                 }
             }
         }
-        //pin.photosLoading = true
         print("fetching photos in map locations view")
-        pin.photosTask = task
     }
     
     
@@ -190,7 +188,7 @@ class FlickrProvider {
     func taskForImage(remotePath: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
         
         let baseURL = NSURL(string: remotePath)!
-        print(baseURL)
+        //print(baseURL)
         
         let request = NSURLRequest(URL: baseURL)
         

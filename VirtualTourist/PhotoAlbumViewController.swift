@@ -12,8 +12,8 @@ import CoreData
 
 class PhotoAlbumViewController: UIViewController {
     private let cellReuseIdentifier = "AlbumCell"
-    private let sectionInsets = UIEdgeInsets(top: 50.0, left: 20.0, bottom: 50.0, right: 20.0)
-    
+    private let sectionInsets = UIEdgeInsets(top: 2.0, left: 2.0, bottom: 2.0, right: 2.0)
+    private let cellPadding: CGFloat = 3.0
     var pin: Pin!
     
     @IBOutlet weak var mapView: MKMapView!
@@ -21,7 +21,12 @@ class PhotoAlbumViewController: UIViewController {
     
     @IBAction func newCollectionAction(sender: AnyObject) {
         //Clear the data from Core Data, while removing the local file artifacts
-        
+        let photos = fetchedResultsController.fetchedObjects as! [Photo]
+        for photo in photos {
+            //remove the locale file and cache
+            FlickrProvider.Caches.imageCache.deleteImageFile(withIdentifier: photo.photoId)
+            sharedContext.deleteObject(photo)
+        }
         //re-fetch photos
         FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
     }
@@ -36,6 +41,7 @@ class PhotoAlbumViewController: UIViewController {
         
         fetchedResultsController.delegate = self
     }
+    
     func setNoPhotosUIState(noPhotos: Bool) {
         noImagesLabel.hidden = !noPhotos
         photoCollectionView.hidden = noPhotos
@@ -65,35 +71,49 @@ class PhotoAlbumViewController: UIViewController {
             setNoPhotosUIState(true)
             return
         }
-        if pin.photos.count < 1 {
-            setNoPhotosUIState(true)
-        } else {
-            setNoPhotosUIState(false)
-        }
+        NSNotificationCenter.defaultCenter().addObserver(self, selector: "screenRotated", name: UIDeviceOrientationDidChangeNotification, object: nil)
+        setNoPhotosUIState(pin.photos.isEmpty)
+        centerOnPin(pin)
         //
         if pin.photos.isEmpty {
             //go get em...
             print("fetching photos in album view")
             FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
-//            let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
-//                FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
-//            let task = FlickrProvider.sharedInstance.taskForResource(FlickrProvider.Resources.SearchPhotos, parameters: parameters) { result, error in
-//                //TODO: parse the result through a map, attach the pin to each photo
-//                if let result = result {
-//                    print(result)
-//                }
-//            }
-//            pin.photosTask = task
         } else {
             print("album view, pin HAD photos already")
         }
     }
+    
+    override func viewWillDisappear(animated: Bool) {
+        super.viewWillDisappear(animated)
+        NSNotificationCenter.defaultCenter().removeObserver(self, name: UIDeviceOrientationDidChangeNotification, object: nil)
+    }
+    
+    func screenRotated() {
+        photoCollectionView.reloadData()
+    }
+    
+    func centerOnPin(pin: Pin) {
+        let centerCoord = CLLocationCoordinate2D(latitude: Double(pin.latitude), longitude: Double(pin.longitude))
+        mapView.centerCoordinate = centerCoord
+        let LAT_DELTA = 0.3
+        let LON_DELTA = 0.3
+        let theSpan = MKCoordinateSpanMake(LAT_DELTA, LON_DELTA)
+        mapView.region = MKCoordinateRegionMake(centerCoord, theSpan)
+        let newAnnotation = MKPointAnnotation()
+        newAnnotation.coordinate = centerCoord
+        mapView.addAnnotation(newAnnotation)
+    }
 }
 
-extension PhotoAlbumViewController:  UICollectionViewDataSource {
+extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionViewDelegate {
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return pin.photos.count
+        if let numItems = fetchedResultsController.fetchedObjects?.count {
+            return numItems
+        } else {
+            return 0
+        }
     }
     func collectionView(collectionView: UICollectionView, cellForItemAtIndexPath indexPath: NSIndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(cellReuseIdentifier, forIndexPath: indexPath) as! PhotoAlbumCell
@@ -102,6 +122,12 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource {
         cell.backgroundColor = UIColor.blackColor()
         return cell
     }
+    
+    func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
+        //TODO: remove the object
+        print("tapped the cell")
+    }
+    
     func configureCell(cell: PhotoAlbumCell, photo: Photo) {
         var photoImage: UIImage!
         cell.imageView!.image = nil
@@ -134,7 +160,9 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource {
 extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
     
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        return CGSize(width: 100, height: 100)
+        let perRow = CGFloat(UIDeviceOrientationIsLandscape(UIDevice.currentDevice().orientation) ? 6.0 : 3.0)
+        let sideSize = (collectionView.frame.size.width - 2.0*perRow*(cellPadding + sectionInsets.left))/perRow
+        return CGSize(width: sideSize, height: sideSize)
     }
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAtIndex section: Int) -> UIEdgeInsets {
         return sectionInsets
@@ -145,13 +173,19 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
         //TODO: beginUpdates() equivalent for CollectionViews?
     }
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
-        //TODO: endUpdates() equivalent for CollectionViews
+        photoCollectionView.reloadData()
     }
     func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
         switch(type){
         case .Insert:
+//            if let newIndexPath = newIndexPath {
+//                photoCollectionView.insertItemsAtIndexPaths([newIndexPath])
+//            }
             break
         case .Delete:
+//            if let indexPath = indexPath {
+//                photoCollectionView.deleteItemsAtIndexPaths([indexPath])
+//            }
             break
         case .Update:
             break

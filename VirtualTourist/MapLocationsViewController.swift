@@ -33,11 +33,6 @@ class MapLocationsViewController: UIViewController {
         mapView.addGestureRecognizer(longPress)
         
         loadMapState()
-        
-//        Span Code sample:
-//        let theSpan:MKCoordinateSpan = MKCoordinateSpanMake(0.01 , 0.01)
-//        let location:CLLocationCoordinate2D = CLLocationCoordinate2D(latitude: 45.612125, longitude: 22.948280)
-//        let theRegion:MKCoordinateRegion = MKCoordinateRegionMake(location, theSpan)
         do {
             try fetchedResultsController.performFetch()
         } catch {}
@@ -45,18 +40,13 @@ class MapLocationsViewController: UIViewController {
     }
     
     lazy var fetchedResultsController: NSFetchedResultsController = {
-        
         let fetchRequest = NSFetchRequest(entityName: "Pin")
-        
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "latitude", ascending: true)]
-        
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
             managedObjectContext: self.sharedContext,
             sectionNameKeyPath: nil,
             cacheName: nil)
-        
         return fetchedResultsController
-        
     }()
     
     var sharedContext: NSManagedObjectContext {
@@ -81,6 +71,7 @@ class MapLocationsViewController: UIViewController {
         NSUserDefaults.standardUserDefaults().setDouble(mapView.centerCoordinate.latitude, forKey: MapStateKeys.CenterLatitude)
         NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.longitudeDelta, forKey: MapStateKeys.SpanLongitudeDelta)
         NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.latitudeDelta, forKey: MapStateKeys.SpanLatitudeDelta)
+//        print("lat span: \(mapView.region.span.latitudeDelta) lon span: \(mapView.region.span.longitudeDelta)")
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
@@ -96,36 +87,20 @@ class MapLocationsViewController: UIViewController {
             mapView.addAnnotation(newAnnotation)
         }
     }
-    
-//    @IBAction func tempToAlbum(sender: AnyObject) {
-//        //TODO: DELETE ME...just temporary code
-//        let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
-//        let newBackNavBtn = UIBarButtonItem()
-//        newBackNavBtn.title = "OK"
-//        navigationItem.backBarButtonItem = newBackNavBtn
-//        navigationController?.pushViewController(albumController, animated: true)
-//    }
-
 }
 
 extension MapLocationsViewController: MKMapViewDelegate {
     
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
-//        let alert = UIAlertController(title: "Annotatation tapped", message: "You tapped the pin", preferredStyle: .Alert)
-//        let okAction = UIAlertAction(title: "OK", style: .Default, handler: nil)
-//        alert.addAction(okAction)
-//        self.presentViewController(alert, animated: true, completion: nil)
-        
         let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
         guard let clickedPin = view.annotation else {
             return
         }
-        //let dictionary = [Pin.Keys.Latitude: clickedPin.coordinate.latitude, Pin.Keys.Longitude: clickedPin.coordinate.longitude]
+        
         let fetchRequest = NSFetchRequest(entityName: "Pin")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "latitude", ascending: true)]
         let epsilon: Double = 0.0000001
         fetchRequest.predicate = epsilonPredicateString(epsilon, coordinate: clickedPin.coordinate)
-        //TODO: this is a mess, so needs to be cleaned up after making it work
         var fetchedPins: [Pin]!
         do {
             fetchedPins = try sharedContext.executeFetchRequest(fetchRequest) as! [Pin]
@@ -134,6 +109,9 @@ extension MapLocationsViewController: MKMapViewDelegate {
             return
         }
         assert(fetchedPins.count == 1, "Pins fetch should be 1, instead we got: \(fetchedPins.count). Note total pin count: \(mapView.annotations.count)")
+        guard fetchedPins.count > 0 else {
+            return
+        }
         albumController.pin = fetchedPins.first
         
         let newBackNavBtn = UIBarButtonItem()
@@ -152,13 +130,10 @@ extension MapLocationsViewController: MKMapViewDelegate {
     
     func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
         let reuseId = "pin"
-        
         var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKPinAnnotationView
-        
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
             pinView!.canShowCallout = false
-            //pinView!.pinColor = .Red
         }
         else {
             pinView!.annotation = annotation

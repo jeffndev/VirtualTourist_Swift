@@ -19,15 +19,6 @@ class Pin: NSManagedObject {
     @NSManaged var latitude: NSNumber //really a Double
     @NSManaged var photos: [Photo]
     
-    //var photosLoading: Bool = false
-    var photosTask: NSURLSessionTask? {
-        didSet {
-            if let taskToCancel = oldValue {
-                taskToCancel.cancel()
-            }
-        }
-    }
-    
     override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
     }

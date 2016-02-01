@@ -39,6 +39,17 @@ class ImageCache {
         return nil
     }
     
+    //MARK: - deleting images
+    func deleteImageFile(withIdentifier identifier: String) {
+        let path = pathForIdentifier(identifier)
+        inMemoryCache.removeObjectForKey(path)
+        do {
+            try NSFileManager.defaultManager().removeItemAtPath(path)
+        }catch let error as NSError {
+            print("could not remove image file: \(path): \(error.localizedDescription)")
+        }
+    }
+    
     // MARK: - Saving images
     
     func storeImage(image: UIImage?, withIdentifier identifier: String) {
@@ -68,7 +79,7 @@ class ImageCache {
         if !identifier.hasSuffix(".jpg") {
             mutableIdentifier = "\(identifier).jpg"
         }
-        print("localImagePath: \(mutableIdentifier)")
+        //print("localImagePath: \(mutableIdentifier)")
         let documentsDirectoryURL: NSURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
         let fullURL = documentsDirectoryURL.URLByAppendingPathComponent(mutableIdentifier)
         

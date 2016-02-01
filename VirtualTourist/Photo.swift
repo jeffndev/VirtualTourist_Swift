@@ -29,7 +29,7 @@ class Photo: NSManagedObject {
         super.init(entity: entity, insertIntoManagedObjectContext: context)
         
         photoId = dictionary[Photo.Keys.PhotoID] as! String
-        remoteImagePath = dictionary[Photo.Keys.MediumImageRemotePath] as! String
+        remoteImagePath = (dictionary[Photo.Keys.MediumImageRemotePath] ?? "") as! String
         photoTitle = dictionary[Photo.Keys.Title] as! String
     }
     
