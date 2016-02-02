@@ -156,6 +156,7 @@
                     </view>
                     <connections>
                         <outlet property="mapView" destination="b8G-LK-y5g" id="zQp-Ip-dm6"/>
+                        <outlet property="newCollectionButton" destination="y5a-sy-ol9" id="c3v-VQ-FOb"/>
                         <outlet property="noImagesLabel" destination="l6H-iP-rfl" id="WNg-9S-uMg"/>
                         <outlet property="photoCollectionView" destination="DbT-OU-qVK" id="2nr-uG-8jd"/>
                     </connections>

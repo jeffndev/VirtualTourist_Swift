@@ -79,7 +79,6 @@ class ImageCache {
         if !identifier.hasSuffix(".jpg") {
             mutableIdentifier = "\(identifier).jpg"
         }
-        //print("localImagePath: \(mutableIdentifier)")
         let documentsDirectoryURL: NSURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
         let fullURL = documentsDirectoryURL.URLByAppendingPathComponent(mutableIdentifier)
         

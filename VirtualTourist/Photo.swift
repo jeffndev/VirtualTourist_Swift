@@ -37,4 +37,7 @@ class Photo: NSManagedObject {
         get { return FlickrProvider.Caches.imageCache.imageWithIdentifier(photoId) }
         set { FlickrProvider.Caches.imageCache.storeImage(newValue, withIdentifier: photoId) }
     }
+    override func prepareForDeletion() {
+        FlickrProvider.Caches.imageCache.deleteImageFile(withIdentifier: photoId)
+    }
 }

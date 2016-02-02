@@ -22,7 +22,7 @@ extension FlickrProvider {
     }
     
     struct Keys {
-        static let ErrorStatusMessage = "error" //TODO: find the real one, this is just a guess
+        static let ErrorStatusMessage = "error" 
         static let MethodParameterForResource = "method"
         static let ApiKeyParameter = "api_key"
         static let LatitudeSearchParameter = "lat"

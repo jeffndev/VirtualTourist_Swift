@@ -29,4 +29,12 @@ class Pin: NSManagedObject {
         longitude = dictionary["longitude"] as! Double
         latitude = dictionary["latitude"] as! Double
     }
+    var photoFetchTask: NSURLSessionTask? {
+        didSet {
+            if let taskToCancel = oldValue {
+                taskToCancel.cancel()
+            }
+        }
+    }
+    
 }

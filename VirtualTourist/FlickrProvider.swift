@@ -22,35 +22,41 @@ class FlickrProvider {
     }
     
     
-    func getPhotos(pin: Pin, dataContext: NSManagedObjectContext) {
+    func getPhotos(pin: Pin, dataContext: NSManagedObjectContext, completion: (message: String?, error: NSError?) -> Void) {
         let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
             FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
         getPagesTaskForSearch(searchParameters: parameters) { page, error in
             guard error == nil else {
                 print("Error retrieving data page for images: \(error)")
+                completion(message: "Error retrieving data page for images: \(error!.localizedDescription)", error: error)
                 return
             }
             guard let page = page else {
                 print("Calculated data page come up empty")
+                completion(message: "Calculated data page come up empty", error: NSError(domain: "Calculated data page come up empty", code: 0, userInfo: nil))
                 return
             }
-            FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
+            pin.photoFetchTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
                 guard error == nil else {
                     print("Error retrieving Photos for location: \(error)")
+                    completion(message: "Error retrieving Photos for location: \(error)", error: error!)
                     return
                 }
                 guard let photosDictionary = result as? [[String: AnyObject]] else {
                     print("Photos data came up empty")
+                    completion(message: "Photos data came up empty", error: NSError(domain: "Photos data came up empty", code: 0, userInfo: nil))
                     return
                 }
-                let _: [Photo] = photosDictionary.map() {
+                let photos: [Photo] = photosDictionary.map() {
                     let photo = Photo(dictionary: $0, context: dataContext)
                     photo.locationPin = pin
                     return photo
                 }
+                print("DATA HAS BEEN RETRIEVED")
+                completion(message: "DATA HAS BEEN RETRIEVED: \(photos.count)", error: nil)
             }
         }
-        print("fetching photos in map locations view")
+        print("fetching photos ...")
     }
     
     
@@ -61,7 +67,6 @@ class FlickrProvider {
         //Flickr uses a get parameter to specify the resource, as the "method" parameter
         mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
         
-        //TODO: possibly move these to better, more logical location?
         let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
         let SAFE_SEARCH = "1"
         let DATA_FORMAT = "json"
@@ -108,7 +113,6 @@ class FlickrProvider {
         //Flickr uses a get parameter to specify the resource, as the "method" parameter
         mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
         
-        //TODO: possibly move these to better, more logical location?
         let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
         let SAFE_SEARCH = "1"
         let DATA_FORMAT = "json"
@@ -154,9 +158,8 @@ class FlickrProvider {
     // MARK: - All purpose task method for data
     func taskForResource(resource: String?, parameters: [String : AnyObject], completionHandler: CompletionHander) -> NSURLSessionDataTask {
         var mutableParameters = parameters
-        //var mutableResource = resource
         
-                // Add in the API Key
+        // Add in the API Key
         mutableParameters[FlickrProvider.Keys.ApiKeyParameter] = Constants.ApiKey
         
         
@@ -188,7 +191,6 @@ class FlickrProvider {
     func taskForImage(remotePath: String, completionHandler: (imageData: NSData?, error: NSError?) ->  Void) -> NSURLSessionTask {
         
         let baseURL = NSURL(string: remotePath)!
-        //print(baseURL)
         
         let request = NSURLRequest(URL: baseURL)
         
@@ -239,7 +241,7 @@ class FlickrProvider {
             print(parsedResult)
             if let parsedResult = parsedResult as? [String : AnyObject], errorMessage = parsedResult[FlickrProvider.Keys.ErrorStatusMessage] as? String {
                 let userInfo = [NSLocalizedDescriptionKey : errorMessage]
-                return NSError(domain: "TMDB Error", code: 1, userInfo: userInfo)
+                return NSError(domain: "Flickr Error", code: 1, userInfo: userInfo)
             }
             
         } catch _ {}
@@ -255,7 +257,6 @@ class FlickrProvider {
         let parsedResult: AnyObject?
         do {
             parsedResult = try NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments)
-            //print(parsedResult)
         } catch let error as NSError {
             parsingError = error
             parsedResult = nil

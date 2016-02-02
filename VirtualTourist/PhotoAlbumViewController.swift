@@ -17,35 +17,11 @@ class PhotoAlbumViewController: UIViewController {
     var pin: Pin!
     
     @IBOutlet weak var mapView: MKMapView!
+    @IBOutlet weak var newCollectionButton: UIBarButtonItem!
     @IBOutlet weak var noImagesLabel: UILabel!
-    
-    @IBAction func newCollectionAction(sender: AnyObject) {
-        //Clear the data from Core Data, while removing the local file artifacts
-        let photos = fetchedResultsController.fetchedObjects as! [Photo]
-        for photo in photos {
-            //remove the locale file and cache
-            FlickrProvider.Caches.imageCache.deleteImageFile(withIdentifier: photo.photoId)
-            sharedContext.deleteObject(photo)
-        }
-        //re-fetch photos
-        FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
-    }
-    
     @IBOutlet weak var photoCollectionView: UICollectionView!
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        do {
-            try fetchedResultsController.performFetch()
-        } catch {}
-        
-        fetchedResultsController.delegate = self
-    }
-    
-    func setNoPhotosUIState(noPhotos: Bool) {
-        noImagesLabel.hidden = !noPhotos
-        photoCollectionView.hidden = noPhotos
-    }
+
+    //MARK: Core Data computed properties
     lazy var fetchedResultsController: NSFetchedResultsController = {
         
         let fetchRequest = NSFetchRequest(entityName: "Photo")
@@ -65,6 +41,18 @@ class PhotoAlbumViewController: UIViewController {
         return CoreDataStackManager.sharedInstance.managedObjectContext
     }
 
+    
+    // MARK: Lifecycle overrides
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        do {
+            try fetchedResultsController.performFetch()
+        } catch {}
+        
+        fetchedResultsController.delegate = self
+    }
+
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         guard let pin = pin else {
@@ -73,12 +61,23 @@ class PhotoAlbumViewController: UIViewController {
         }
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "screenRotated", name: UIDeviceOrientationDidChangeNotification, object: nil)
         setNoPhotosUIState(pin.photos.isEmpty)
+        setImagesLoadingUIState(false)
         centerOnPin(pin)
-        //
         if pin.photos.isEmpty {
-            //go get em...
-            print("fetching photos in album view")
-            FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
+            //Check if there is already a fetch in progress...
+            if pin.photoFetchTask != nil && pin.photoFetchTask!.state == .Running {
+                setImagesLoadingUIState(true)
+                print("Photos fetch in-progress, do not re-fetch, waiting...")
+            } else {
+                //go get em...
+                print("Photos Empty, fetching photos in album view")
+                setImagesLoadingUIState(true)
+                FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
+                    if error == nil {
+                        CoreDataStackManager.sharedInstance.saveContext()
+                    }
+                }
+            }
         } else {
             print("album view, pin HAD photos already")
         }
@@ -87,6 +86,39 @@ class PhotoAlbumViewController: UIViewController {
     override func viewWillDisappear(animated: Bool) {
         super.viewWillDisappear(animated)
         NSNotificationCenter.defaultCenter().removeObserver(self, name: UIDeviceOrientationDidChangeNotification, object: nil)
+    }
+
+    //MARK: Actions handlers
+    
+    @IBAction func newCollectionAction(sender: AnyObject) {
+        //Clear the data from Core Data, while removing the local file artifacts
+        let photos = fetchedResultsController.fetchedObjects as! [Photo]
+        for photo in photos {
+            //remove the locale file and cache
+            sharedContext.deleteObject(photo)
+        }
+        CoreDataStackManager.sharedInstance.saveContext()
+        //re-fetch photos
+        setImagesLoadingUIState(true)
+        FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
+            if error == nil {
+                CoreDataStackManager.sharedInstance.saveContext()
+            }
+        }
+    }
+    
+    
+    // MARK: UI Helpers
+    
+    func setNoPhotosUIState(noPhotos: Bool) {
+        print("setNoPhotosState: \(noPhotos)")
+        noImagesLabel.hidden = !noPhotos
+        photoCollectionView.hidden = noPhotos
+    }
+    func setImagesLoadingUIState(activelyLoading: Bool) {
+        print("setImagesLoading: \(activelyLoading)")
+        newCollectionButton.enabled = !activelyLoading
+        photoCollectionView.alpha = activelyLoading ? 0.5 : 1.0
     }
     
     func screenRotated() {
@@ -106,6 +138,7 @@ class PhotoAlbumViewController: UIViewController {
     }
 }
 
+//MARK: CollectionView delegates
 extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionViewDelegate {
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -124,12 +157,13 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionVie
     }
     
     func collectionView(collectionView: UICollectionView, didSelectItemAtIndexPath indexPath: NSIndexPath) {
-        //TODO: remove the object
-        print("tapped the cell")
+        let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
+        sharedContext.deleteObject(photo)
+        CoreDataStackManager.sharedInstance.saveContext()
     }
     
     func configureCell(cell: PhotoAlbumCell, photo: Photo) {
-        var photoImage: UIImage!
+        var photoImage = UIImage(named: "placeHolder")
         cell.imageView!.image = nil
         if photo.remoteImagePath == "" {
             //no image Image
@@ -151,7 +185,6 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionVie
                     cell.imageView!.image = image
                 }
             }
-            //TODO: hook up a task cancelling thing for the cell...
         }
         cell.imageView.image = photoImage
     }
@@ -168,26 +201,26 @@ extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
         return sectionInsets
     }
 }
+
+// MARK:  Core Data
 extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
-        //TODO: beginUpdates() equivalent for CollectionViews?
+        print("Core Data: controller WILL change fired")
     }
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
+        print("Core Data: controller DID change fired")
         photoCollectionView.reloadData()
+        setNoPhotosUIState(controller.fetchedObjects!.isEmpty)
+        setImagesLoadingUIState(false)
     }
     func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
+        
         switch(type){
         case .Insert:
-//            if let newIndexPath = newIndexPath {
-//                photoCollectionView.insertItemsAtIndexPaths([newIndexPath])
-//            }
+            print("Core Data: controller Insert fired")
             break
         case .Delete:
-//            if let indexPath = indexPath {
-//                photoCollectionView.deleteItemsAtIndexPaths([indexPath])
-//            }
-            break
-        case .Update:
+            print("Core Data: controller Delete fired")
             break
         default:
             break

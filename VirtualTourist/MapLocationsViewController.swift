@@ -22,7 +22,8 @@ class MapLocationsViewController: UIViewController {
     @IBOutlet weak var mapView: MKMapView!
     
     let photoAlbumViewControllerStoryboardID = "PhotoAlbum"
-    
+
+    //MARK: Lifecycle overrides
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -37,7 +38,16 @@ class MapLocationsViewController: UIViewController {
             try fetchedResultsController.performFetch()
         } catch {}
         fetchedResultsController.delegate = self
+
+        let pins = fetchedResultsController.fetchedObjects as! [Pin]
+        for pin in pins {
+            let newAnnotation = MKPointAnnotation()
+            newAnnotation.coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(pin.latitude), longitude: CLLocationDegrees(pin.longitude))
+            mapView.addAnnotation(newAnnotation)
+        }
     }
+
+    //MARK: Core Data computed properties
     
     lazy var fetchedResultsController: NSFetchedResultsController = {
         let fetchRequest = NSFetchRequest(entityName: "Pin")
@@ -52,13 +62,16 @@ class MapLocationsViewController: UIViewController {
     var sharedContext: NSManagedObjectContext {
         return CoreDataStackManager.sharedInstance.managedObjectContext
     }
-    
+}
+
+extension MapLocationsViewController: MKMapViewDelegate {
+    //MARK: map view helpers
     func loadMapState() {
-        guard let lon = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLongitude) as? Double,
-            let lat = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLatitude) as? Double,
-            let latDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLatitudeDelta) as? Double,
-            let lonDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLongitudeDelta) as? Double else {
-            return
+        guard let lon = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLongitude) as? CLLocationDegrees,
+            let lat = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLatitude) as? CLLocationDegrees,
+            let latDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLatitudeDelta) as? CLLocationDegrees,
+            let lonDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLongitudeDelta) as? CLLocationDegrees else {
+                return
         }
         let centerCoord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
         mapView.centerCoordinate = centerCoord
@@ -71,7 +84,6 @@ class MapLocationsViewController: UIViewController {
         NSUserDefaults.standardUserDefaults().setDouble(mapView.centerCoordinate.latitude, forKey: MapStateKeys.CenterLatitude)
         NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.longitudeDelta, forKey: MapStateKeys.SpanLongitudeDelta)
         NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.latitudeDelta, forKey: MapStateKeys.SpanLatitudeDelta)
-//        print("lat span: \(mapView.region.span.latitudeDelta) lon span: \(mapView.region.span.longitudeDelta)")
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
@@ -83,15 +95,14 @@ class MapLocationsViewController: UIViewController {
             newAnnotation.coordinate = coord
             let dictionary = [Pin.Keys.Latitude: coord.latitude, Pin.Keys.Longitude: coord.longitude]
             let _ = Pin(dictionary: dictionary, context: sharedContext)
-            //CoreDataStackManager.sharedInstance.saveContext()
+            CoreDataStackManager.sharedInstance.saveContext()
             mapView.addAnnotation(newAnnotation)
         }
     }
-}
-
-extension MapLocationsViewController: MKMapViewDelegate {
     
+    //MARK: MKMapViewDelegate methods
     func mapView(mapView: MKMapView, didSelectAnnotationView view: MKAnnotationView) {
+        //tap annotation, get Pin from Data, push to Photo Album
         let albumController = storyboard?.instantiateViewControllerWithIdentifier(photoAlbumViewControllerStoryboardID) as! PhotoAlbumViewController
         guard let clickedPin = view.annotation else {
             return
@@ -108,8 +119,8 @@ extension MapLocationsViewController: MKMapViewDelegate {
             print("no pins returned from fetch after pin tap: \(error.localizedDescription)")
             return
         }
-        assert(fetchedPins.count == 1, "Pins fetch should be 1, instead we got: \(fetchedPins.count). Note total pin count: \(mapView.annotations.count)")
         guard fetchedPins.count > 0 else {
+            print("Pins fetch should be 1, instead we got: \(fetchedPins.count). Note total pin count: \(mapView.annotations.count)")
             return
         }
         albumController.pin = fetchedPins.first
@@ -119,7 +130,6 @@ extension MapLocationsViewController: MKMapViewDelegate {
         navigationItem.backBarButtonItem = newBackNavBtn
         navigationController?.pushViewController(albumController, animated: true)
     }
-    
     func epsilonPredicateString(epsilon: Double, coordinate: CLLocationCoordinate2D) ->NSPredicate {
         return NSPredicate(format:"latitude > %lf AND latitude < %lf AND longitude > %lf AND longitude < %lf", coordinate.latitude - epsilon,  coordinate.latitude + epsilon, coordinate.longitude - epsilon, coordinate.longitude + epsilon)
     }
@@ -129,6 +139,7 @@ extension MapLocationsViewController: MKMapViewDelegate {
     }
     
     func mapView(mapView: MKMapView, viewForAnnotation annotation: MKAnnotation) -> MKAnnotationView? {
+        //defines the Annotation that gets created on the long tap
         let reuseId = "pin"
         var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKPinAnnotationView
         if pinView == nil {
@@ -144,7 +155,6 @@ extension MapLocationsViewController: MKMapViewDelegate {
 
 extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
     
-    
     func controller(controller: NSFetchedResultsController, didChangeObject anObject: AnyObject, atIndexPath indexPath: NSIndexPath?, forChangeType type: NSFetchedResultsChangeType, newIndexPath: NSIndexPath?) {
         
         switch(type){
@@ -153,37 +163,11 @@ extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
                 print("Inserting additional pin: lat (\(pin.latitude) lon(\(pin.longitude)))")
                 if pin.photos.isEmpty {
                     //go fetch photos...
-                    FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext)
-//                    let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
-//                        FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
-//                    let task = FlickrProvider.sharedInstance.getPagesTaskForSearch(searchParameters: parameters) { page, error in
-//                        guard error == nil else {
-//                            print("Error retrieving data page for images: \(error)")
-//                            return
-//                        }
-//                        guard let page = page else {
-//                            print("Calculated data page come up empty")
-//                            return
-//                        }
-//                        pin.photosTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
-//                            guard error == nil else {
-//                                print("Error retrieving Photos for location: \(error)")
-//                                return
-//                            }
-//                            guard let photosDictionary = result as? [[String: AnyObject]] else {
-//                                print("Photos data came up empty")
-//                                return
-//                            }
-//                            let photos: [Photo] = photosDictionary.map() {
-//                                let photo = Photo(dictionary: $0, context: self.sharedContext)
-//                                photo.locationPin = pin
-//                                return photo
-//                            }
-//                        }
-//                    }
-//                    //pin.photosLoading = true
-//                    print("fetching photos in map locations view")
-//                    pin.photosTask = task
+                    FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
+                        if error == nil {
+                            CoreDataStackManager.sharedInstance.saveContext()
+                        }
+                    }
                 }
             }
         default:
