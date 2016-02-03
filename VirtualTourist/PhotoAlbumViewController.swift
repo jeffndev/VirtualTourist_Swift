@@ -227,7 +227,6 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
         insertedIndexPaths = [NSIndexPath]()
         deletedIndexPaths = [NSIndexPath]()
         updatedIndexPaths = [NSIndexPath]()
-        print("Core Data: controller WILL change fired")
     }
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
         photoCollectionView.performBatchUpdates({() -> Void in
@@ -245,7 +244,6 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
             
             }, completion: nil)
 
-        print("Core Data: controller DID change fired")
         setNoPhotosUIState(controller.fetchedObjects!.isEmpty)
         setImagesLoadingUIState(false)
     }
@@ -254,15 +252,12 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
         switch(type){
         case .Insert:
             insertedIndexPaths.append(newIndexPath!)
-            print("Core Data: controller Insert fired")
             break
         case .Delete:
             deletedIndexPaths.append(indexPath!)
-            print("Core Data: controller Delete fired")
             break
         case .Update:
             updatedIndexPaths.append(indexPath!)
-            print("Core Data: controller Updated fired")
             break
         default:
             break

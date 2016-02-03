@@ -66,6 +66,24 @@ class MapLocationsViewController: UIViewController {
     var sharedContext: NSManagedObjectContext {
         return CoreDataStackManager.sharedInstance.managedObjectContext
     }
+    
+    func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
+        if let photosJson = photosJson {
+            dispatch_async(dispatch_get_main_queue()) {
+                let _: [Photo] = photosJson.map() {
+                    let photo = Photo(dictionary: $0, context: self.sharedContext)
+                    photo.locationPin = pin
+                    return photo
+                }
+                CoreDataStackManager.sharedInstance.saveContext()
+            }
+        } else {
+            if let error = error {
+                print("Error fetching photos from  MapLocations Scene: \(error.localizedDescription)")
+            }
+        }
+    }
+
 }
 
 extension MapLocationsViewController: MKMapViewDelegate {
@@ -197,21 +215,7 @@ extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
                 if pin.photos.isEmpty {
                     //go fetch photos...
                     FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
-                        if let photosJson = photosJson {
-                            dispatch_async(dispatch_get_main_queue()) {
-                                let _: [Photo] = photosJson.map() {
-                                    let photo = Photo(dictionary: $0, context: self.sharedContext)
-                                    photo.locationPin = pin
-                                    return photo
-                                }
-                                CoreDataStackManager.sharedInstance.saveContext()
-                            }
-                        } else {
-                            if let error = error {
-                                print("Error fetching photos from MapLocations Scene: \(error.localizedDescription)")
-                            }
-                        }
-                    }
+                        self.processPhotosJson(pin, photosJson: photosJson, error: error)                    }
                 }
             }
         default:
