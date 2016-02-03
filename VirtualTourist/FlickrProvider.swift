@@ -22,39 +22,34 @@ class FlickrProvider {
     }
     
     
-    func getPhotos(pin: Pin, dataContext: NSManagedObjectContext, completion: (message: String?, error: NSError?) -> Void) {
+    func getPhotos(pin: Pin, dataContext: NSManagedObjectContext, completion: (photosJson: [[String: AnyObject]]?, error: NSError?) -> Void) {
         let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
             FlickrProvider.Keys.LongitudeSearchParameter: pin.longitude]
         getPagesTaskForSearch(searchParameters: parameters) { page, error in
             guard error == nil else {
                 print("Error retrieving data page for images: \(error)")
-                completion(message: "Error retrieving data page for images: \(error!.localizedDescription)", error: error)
+                completion(photosJson: nil, error: error)
                 return
             }
             guard let page = page else {
                 print("Calculated data page come up empty")
-                completion(message: "Calculated data page come up empty", error: NSError(domain: "Calculated data page come up empty", code: 0, userInfo: nil))
+                completion(photosJson: nil, error: NSError(domain: "Calculated data page come up empty", code: 0, userInfo: nil))
                 return
             }
             pin.photoFetchTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
                 guard error == nil else {
                     print("Error retrieving Photos for location: \(error)")
-                    completion(message: "Error retrieving Photos for location: \(error)", error: error!)
+                    completion(photosJson: nil, error: error!)
                     return
                 }
                 guard let photosDictionary = result as? [[String: AnyObject]] else {
                     print("Photos data came up empty")
-                    completion(message: "Photos data came up empty", error: NSError(domain: "Photos data came up empty", code: 0, userInfo: nil))
+                    completion(photosJson: nil, error: NSError(domain: "Photos data came up empty", code: 0, userInfo: nil))
                     return
                 }
-                let photos: [Photo] = photosDictionary.map() {
-                    let photo = Photo(dictionary: $0, context: dataContext)
-                    photo.locationPin = pin
-                    return photo
-                }
+                completion(photosJson: photosDictionary, error: nil)
                 print("DATA HAS BEEN RETRIEVED")
-                completion(message: "DATA HAS BEEN RETRIEVED: \(photos.count)", error: nil)
-            }
+             }
         }
         print("fetching photos ...")
     }

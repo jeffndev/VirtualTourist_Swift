@@ -78,10 +78,8 @@ class PhotoAlbumViewController: UIViewController {
                 //go get em...
                 print("Photos Empty, fetching photos in album view")
                 setImagesLoadingUIState(true)
-                FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
-                    if error == nil {
-                        CoreDataStackManager.sharedInstance.saveContext()
-                    }
+                FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
+                    self.processPhotosJson(self.pin, photosJson: photosJson, error: error)
                 }
             }
         } else {
@@ -106,14 +104,28 @@ class PhotoAlbumViewController: UIViewController {
         CoreDataStackManager.sharedInstance.saveContext()
         //re-fetch photos
         setImagesLoadingUIState(true)
-        FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
-            if error == nil {
-                CoreDataStackManager.sharedInstance.saveContext()
-            }
+        FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
+            self.processPhotosJson(self.pin, photosJson: photosJson, error: error)
         }
     }
     
     
+    func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
+        if let photosJson = photosJson {
+            dispatch_async(dispatch_get_main_queue()) {
+                let _: [Photo] = photosJson.map() {
+                    let photo = Photo(dictionary: $0, context: self.sharedContext)
+                    photo.locationPin = pin
+                    return photo
+                }
+                CoreDataStackManager.sharedInstance.saveContext()
+            }
+        } else {
+            if let error = error {
+                print("Error fetching photos from PhotoBooth Scene: \(error.localizedDescription)")
+            }
+        }
+    }
     // MARK: UI Helpers
     
     func setNoPhotosUIState(noPhotos: Bool) {
@@ -187,8 +199,8 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionVie
                     return
                 }
                 let image = UIImage(data: data)
-                photo.photoImage = image
                 dispatch_async(dispatch_get_main_queue()) {
+                    photo.photoImage = image
                     cell.imageView!.image = image
                 }
             }

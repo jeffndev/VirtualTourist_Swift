@@ -112,7 +112,7 @@ extension MapLocationsViewController: MKMapViewDelegate {
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
-        if gestureRecognizer.state == .Ended {
+        if gestureRecognizer.state == .Began {
             print("long press received")
             let touchPoint = gestureRecognizer.locationInView(mapView)
             let coord: CLLocationCoordinate2D = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
@@ -169,12 +169,20 @@ extension MapLocationsViewController: MKMapViewDelegate {
         var pinView = mapView.dequeueReusableAnnotationViewWithIdentifier(reuseId) as? MKPinAnnotationView
         if pinView == nil {
             pinView = MKPinAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-            pinView!.canShowCallout = false
         }
-        else {
-            pinView!.annotation = annotation
-        }
+        pinView!.draggable = true
+        pinView!.annotation = annotation
+        pinView!.canShowCallout = false
         return pinView
+    }
+    func mapView(mapView: MKMapView, annotationView view: MKAnnotationView, didChangeDragState newState: MKAnnotationViewDragState, fromOldState oldState: MKAnnotationViewDragState) {
+        switch (newState) {
+        case .Starting:
+            view.dragState = .Dragging
+        case .Ending, .Canceling:
+            view.dragState = .None
+        default: break
+        }
     }
 }
 
@@ -188,9 +196,20 @@ extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
                 print("Inserting additional pin: lat (\(pin.latitude) lon(\(pin.longitude)))")
                 if pin.photos.isEmpty {
                     //go fetch photos...
-                    FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { message, error in
-                        if error == nil {
-                            CoreDataStackManager.sharedInstance.saveContext()
+                    FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
+                        if let photosJson = photosJson {
+                            dispatch_async(dispatch_get_main_queue()) {
+                                let _: [Photo] = photosJson.map() {
+                                    let photo = Photo(dictionary: $0, context: self.sharedContext)
+                                    photo.locationPin = pin
+                                    return photo
+                                }
+                                CoreDataStackManager.sharedInstance.saveContext()
+                            }
+                        } else {
+                            if let error = error {
+                                print("Error fetching photos from MapLocations Scene: \(error.localizedDescription)")
+                            }
                         }
                     }
                 }
