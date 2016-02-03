@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model userDefinedModelVersionIdentifier="" type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="9525" systemVersion="15D21" minimumToolsVersion="Xcode 7.0">
+    <entity name="MapState" representedClassName=".MapState" syncable="YES">
+        <attribute name="centerLatitude" optional="YES" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
+        <attribute name="centerLongitude" optional="YES" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
+        <attribute name="spanLatitudeDelta" optional="YES" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
+        <attribute name="spanLongitudeDelta" optional="YES" attributeType="Double" defaultValueString="0.0" syncable="YES"/>
+    </entity>
     <entity name="Photo" representedClassName=".Photo" syncable="YES">
         <attribute name="photoId" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="photoTitle" optional="YES" attributeType="String" syncable="YES"/>
@@ -12,7 +18,8 @@
         <relationship name="photos" toMany="YES" deletionRule="Nullify" ordered="YES" destinationEntity="Photo" inverseName="locationPin" inverseEntity="Photo" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Photo" positionX="-63" positionY="-18" width="128" height="105"/>
+        <element name="Photo" positionX="-63" positionY="-18" width="128" height="30"/>
         <element name="Pin" positionX="-54" positionY="18" width="128" height="90"/>
+        <element name="MapState" positionX="-63" positionY="36" width="128" height="105"/>
     </elements>
 </model>

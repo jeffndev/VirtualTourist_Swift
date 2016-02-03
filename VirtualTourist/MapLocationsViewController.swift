@@ -12,17 +12,12 @@ import CoreData
 
 class MapLocationsViewController: UIViewController {
     
-    struct MapStateKeys {
-        static let CenterLatitude = "center latitude"
-        static let CenterLongitude = "center longitude"
-        static let SpanLatitudeDelta = "span latitude delta"
-        static let SpanLongitudeDelta = "span longitude delta"
-    }
-
     @IBOutlet weak var mapView: MKMapView!
     
+    var mapState: MapState!
+    
     let photoAlbumViewControllerStoryboardID = "PhotoAlbum"
-
+    
     //MARK: Lifecycle overrides
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,25 +28,34 @@ class MapLocationsViewController: UIViewController {
         longPress.minimumPressDuration = 1.0
         mapView.addGestureRecognizer(longPress)
         
-        loadMapState()
         do {
-            try fetchedResultsController.performFetch()
+            try fetchedMapStateResultsController.performFetch()
         } catch {}
-        fetchedResultsController.delegate = self
-
-        let pins = fetchedResultsController.fetchedObjects as! [Pin]
-        for pin in pins {
-            let newAnnotation = MKPointAnnotation()
-            newAnnotation.coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(pin.latitude), longitude: CLLocationDegrees(pin.longitude))
-            mapView.addAnnotation(newAnnotation)
-        }
+        fetchedMapStateResultsController.delegate = self
+        loadMapState()
+        
+        do {
+            try fetchedPinResultsController.performFetch()
+        } catch {}
+        fetchedPinResultsController.delegate = self
+        loadPins()
     }
 
     //MARK: Core Data computed properties
     
-    lazy var fetchedResultsController: NSFetchedResultsController = {
+    lazy var fetchedPinResultsController: NSFetchedResultsController = {
         let fetchRequest = NSFetchRequest(entityName: "Pin")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "latitude", ascending: true)]
+        let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
+            managedObjectContext: self.sharedContext,
+            sectionNameKeyPath: nil,
+            cacheName: nil)
+        return fetchedResultsController
+    }()
+    
+    lazy var fetchedMapStateResultsController: NSFetchedResultsController = {
+        let fetchRequest = NSFetchRequest(entityName: "MapState")
+        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "centerLatitude", ascending: true)]
         let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest,
             managedObjectContext: self.sharedContext,
             sectionNameKeyPath: nil,
@@ -65,25 +69,46 @@ class MapLocationsViewController: UIViewController {
 }
 
 extension MapLocationsViewController: MKMapViewDelegate {
+    func loadPins() {
+        let pins = fetchedPinResultsController.fetchedObjects as! [Pin]
+        for pin in pins {
+            let newAnnotation = MKPointAnnotation()
+            newAnnotation.coordinate = CLLocationCoordinate2D(latitude: CLLocationDegrees(pin.latitude), longitude: CLLocationDegrees(pin.longitude))
+            mapView.addAnnotation(newAnnotation)
+        }
+    }
     //MARK: map view helpers
     func loadMapState() {
-        guard let lon = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLongitude) as? CLLocationDegrees,
-            let lat = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.CenterLatitude) as? CLLocationDegrees,
-            let latDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLatitudeDelta) as? CLLocationDegrees,
-            let lonDelta = NSUserDefaults.standardUserDefaults().valueForKey(MapStateKeys.SpanLongitudeDelta) as? CLLocationDegrees else {
-                return
+        let states = fetchedMapStateResultsController.fetchedObjects as! [MapState]
+        if !states.isEmpty {
+            mapState = states.first!
+            let lat = mapState.centerLatitude as CLLocationDegrees
+            let lon = mapState.centerLongitude as CLLocationDegrees
+            let latDelta = mapState.spanLatitudeDelta as CLLocationDegrees
+            let lonDelta = mapState.spanLongitudeDelta as CLLocationDegrees
+            let centerCoord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+            mapView.centerCoordinate = centerCoord
+            let theSpan = MKCoordinateSpanMake(latDelta, lonDelta)
+            mapView.region = MKCoordinateRegionMake(centerCoord, theSpan)
+        } else {
+            let dictionary = [MapState.Keys.CenterLatitude: mapView.centerCoordinate.latitude,
+                              MapState.Keys.CenterLongitude: mapView.centerCoordinate.longitude,
+                              MapState.Keys.SpanLatitudeDelta: mapView.region.span.latitudeDelta,
+                              MapState.Keys.SpanLongitudeDelta: mapView.region.span.longitudeDelta]
+            mapState = MapState(dictionary: dictionary, context: sharedContext)
+            CoreDataStackManager.sharedInstance.saveContext()
         }
-        let centerCoord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        mapView.centerCoordinate = centerCoord
-        let theSpan = MKCoordinateSpanMake(latDelta, lonDelta)
-        mapView.region = MKCoordinateRegionMake(centerCoord, theSpan)
+        
     }
     
     func saveMapState() {
-        NSUserDefaults.standardUserDefaults().setDouble(mapView.centerCoordinate.longitude, forKey: MapStateKeys.CenterLongitude)
-        NSUserDefaults.standardUserDefaults().setDouble(mapView.centerCoordinate.latitude, forKey: MapStateKeys.CenterLatitude)
-        NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.longitudeDelta, forKey: MapStateKeys.SpanLongitudeDelta)
-        NSUserDefaults.standardUserDefaults().setDouble(mapView.region.span.latitudeDelta, forKey: MapStateKeys.SpanLatitudeDelta)
+        if let mapState = mapState {
+            mapState.centerLatitude = mapView.centerCoordinate.latitude
+            mapState.centerLongitude = mapView.centerCoordinate.longitude
+            mapState.spanLatitudeDelta = mapView.region.span.latitudeDelta
+            mapState.spanLongitudeDelta = mapView.region.span.longitudeDelta
+            CoreDataStackManager.sharedInstance.saveContext()
+        }
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {

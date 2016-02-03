@@ -21,6 +21,12 @@ class PhotoAlbumViewController: UIViewController {
     @IBOutlet weak var noImagesLabel: UILabel!
     @IBOutlet weak var photoCollectionView: UICollectionView!
 
+    
+    // Keep the changes. We will keep track of insertions, deletions, and updates.
+    var insertedIndexPaths: [NSIndexPath]!
+    var deletedIndexPaths: [NSIndexPath]!
+    var updatedIndexPaths: [NSIndexPath]!
+    
     //MARK: Core Data computed properties
     lazy var fetchedResultsController: NSFetchedResultsController = {
         
@@ -141,6 +147,7 @@ class PhotoAlbumViewController: UIViewController {
 //MARK: CollectionView delegates
 extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionViewDelegate {
     
+    
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if let numItems = fetchedResultsController.fetchedObjects?.count {
             return numItems
@@ -205,11 +212,28 @@ extension PhotoAlbumViewController: UICollectionViewDelegateFlowLayout {
 // MARK:  Core Data
 extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
+        insertedIndexPaths = [NSIndexPath]()
+        deletedIndexPaths = [NSIndexPath]()
+        updatedIndexPaths = [NSIndexPath]()
         print("Core Data: controller WILL change fired")
     }
     func controllerDidChangeContent(controller: NSFetchedResultsController) {
+        photoCollectionView.performBatchUpdates({() -> Void in
+            for indexPath in self.insertedIndexPaths {
+                self.photoCollectionView.insertItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.deletedIndexPaths {
+                self.photoCollectionView.deleteItemsAtIndexPaths([indexPath])
+            }
+            
+            for indexPath in self.updatedIndexPaths {
+                self.photoCollectionView.reloadItemsAtIndexPaths([indexPath])
+            }
+            
+            }, completion: nil)
+
         print("Core Data: controller DID change fired")
-        photoCollectionView.reloadData()
         setNoPhotosUIState(controller.fetchedObjects!.isEmpty)
         setImagesLoadingUIState(false)
     }
@@ -217,10 +241,16 @@ extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
         
         switch(type){
         case .Insert:
+            insertedIndexPaths.append(newIndexPath!)
             print("Core Data: controller Insert fired")
             break
         case .Delete:
+            deletedIndexPaths.append(indexPath!)
             print("Core Data: controller Delete fired")
+            break
+        case .Update:
+            updatedIndexPaths.append(indexPath!)
+            print("Core Data: controller Updated fired")
             break
         default:
             break
