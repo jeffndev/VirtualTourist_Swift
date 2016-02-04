@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		BD072D511C63BCE800B95E2E /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD072D501C63BCE800B95E2E /* Utils.swift */; };
 		BD1156CB1C52BAD40024278D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD1156CA1C52BAD40024278D /* AppDelegate.swift */; };
 		BD1156D01C52BAD40024278D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BD1156CE1C52BAD40024278D /* Main.storyboard */; };
 		BD1156D21C52BAD40024278D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BD1156D11C52BAD40024278D /* Assets.xcassets */; };
@@ -25,6 +26,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		BD072D501C63BCE800B95E2E /* Utils.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		BD1156C71C52BAD40024278D /* VirtualTourist.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VirtualTourist.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD1156CA1C52BAD40024278D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		BD1156CF1C52BAD40024278D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -75,6 +77,7 @@
 			isa = PBXGroup;
 			children = (
 				BD1156CA1C52BAD40024278D /* AppDelegate.swift */,
+				BD072D501C63BCE800B95E2E /* Utils.swift */,
 				BDB3E8521C596542001209B4 /* Providers */,
 				BD70FE0D1C569DC0008CD528 /* CoreDataStackManager.swift */,
 				BD96C2021C57FFFE006A4DB6 /* Model.xcdatamodeld */,
@@ -194,6 +197,7 @@
 				BDBE9C481C5AB59E003824CE /* PhotoAlbumCell.swift in Sources */,
 				BD1156CB1C52BAD40024278D /* AppDelegate.swift in Sources */,
 				BDE541971C5935CB00F9837D /* ImageCache.swift in Sources */,
+				BD072D511C63BCE800B95E2E /* Utils.swift in Sources */,
 				BDE5419B1C59534F00F9837D /* FlickrProvider-Constants.swift in Sources */,
 				BD1156DF1C52C8CF0024278D /* MapLocationsViewController.swift in Sources */,
 				BD96C2041C57FFFE006A4DB6 /* Model.xcdatamodeld in Sources */,

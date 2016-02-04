@@ -67,22 +67,16 @@ class MapLocationsViewController: UIViewController {
         return CoreDataStackManager.sharedInstance.managedObjectContext
     }
     
+    // MARK: Data helpers..
     func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
         if let photosJson = photosJson {
             dispatch_async(dispatch_get_main_queue()) {
-                let photos: [Photo] = photosJson.map() {
+                let _: [Photo] = photosJson.map() {
                     let photo = Photo(dictionary: $0, context: self.sharedContext)
                     photo.locationPin = pin
                     return photo
                 }
-                if photos.isEmpty {
-                    print("Photos json came up EMPTY in FINAL COMPLETION")
-                }
                 CoreDataStackManager.sharedInstance.saveContext()
-            }
-        } else {
-            if let error = error {
-                print("Error fetching photos from  MapLocations Scene: \(error.localizedDescription)")
             }
         }
     }
@@ -219,7 +213,8 @@ extension MapLocationsViewController: NSFetchedResultsControllerDelegate {
                 if pin.photos.isEmpty {
                     //go fetch photos...
                     FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
-                        self.processPhotosJson(pin, photosJson: photosJson, error: error)                    }
+                        self.processPhotosJson(pin, photosJson: photosJson, error: error)
+                    }
                 }
             }
         default:

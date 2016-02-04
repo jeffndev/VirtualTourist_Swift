@@ -70,10 +70,9 @@ class FlickrProvider {
         mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
         
         let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
-        let SAFE_SEARCH = "1"
+        let SAFE_SEARCH = "3"
         let DATA_FORMAT = "json"
         let NO_JSON_CALLBACK = "1"
-        let PER_PAGE = 18
         
         mutableParameters[FlickrProvider.Keys.ExtrasParameter] = EXTRAS_MEDIUM_IMAGE_PATH
         mutableParameters[FlickrProvider.Keys.SafeSearchParameter] = SAFE_SEARCH
@@ -182,7 +181,6 @@ class FlickrProvider {
         let task = session.dataTaskWithRequest(request) {data, response, downloadError in
             
             if let error = downloadError {
-                //TODO: need to fix this..
                 let newError = FlickrProvider.errorForData(data, response: response, error: error)
                 completionHandler(result: nil, error: newError)
             } else {

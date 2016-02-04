@@ -69,7 +69,7 @@ class PhotoAlbumViewController: UIViewController {
         setNoPhotosUIState(fetchedResultsController.fetchedObjects!.isEmpty)
         setImagesLoadingUIState(false)
         centerOnPin(pin)
-        if fetchedResultsController.fetchedObjects!.isEmpty {//pin.photos.isEmpty {
+        if fetchedResultsController.fetchedObjects!.isEmpty {
             //Check if there is already a fetch in progress...
             if pin.photoFetchTask != nil && pin.photoFetchTask!.state == .Running {
                 setImagesLoadingUIState(true)
@@ -82,8 +82,6 @@ class PhotoAlbumViewController: UIViewController {
                     self.processPhotosJson(self.pin, photosJson: photosJson, error: error)
                 }
             }
-        } else {
-            print("album view, pin HAD photos already")
         }
     }
     
@@ -98,37 +96,18 @@ class PhotoAlbumViewController: UIViewController {
         //Clear the data from Core Data, while removing the local file artifacts
         let photos = fetchedResultsController.fetchedObjects as! [Photo]
         for photo in photos {
-            //remove the locale file and cache
+            //remove the locale file and cache through Photo prepareForDeletion
             sharedContext.deleteObject(photo)
         }
         CoreDataStackManager.sharedInstance.saveContext()
-        if !checkIfDocsDirIsEmpty() {
-            print("Docs directory is NOT EMPTY after clearing photos")
-        }
         //re-fetch photos
         setImagesLoadingUIState(true)
-        print("About to re-FETCH in photo booth...")
         FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
             self.processPhotosJson(self.pin, photosJson: photosJson, error: error)
         }
     }
-    func checkIfDocsDirIsEmpty() -> Bool {
-        let documentsDirectoryURL: NSURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
-        let path = documentsDirectoryURL.path!
-        do {
-            let listOfFiles = try NSFileManager.defaultManager().contentsOfDirectoryAtPath(path)
-            listOfFiles.map( { print($0) })
-//            for fl in listOfFiles {
-//                
-//            }
-            return listOfFiles.isEmpty
-        } catch {
-            print("Error listing Documents directory files")
-            return false
-        }
-        
-    }
     
+    //MARK: Data helpers
     func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
         var emptyFetch = false
         if let photosJson = photosJson {
