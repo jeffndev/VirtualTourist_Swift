@@ -66,10 +66,10 @@ class PhotoAlbumViewController: UIViewController {
             return
         }
         NSNotificationCenter.defaultCenter().addObserver(self, selector: "screenRotated", name: UIDeviceOrientationDidChangeNotification, object: nil)
-        setNoPhotosUIState(pin.photos.isEmpty)
+        setNoPhotosUIState(fetchedResultsController.fetchedObjects!.isEmpty)
         setImagesLoadingUIState(false)
         centerOnPin(pin)
-        if pin.photos.isEmpty {
+        if fetchedResultsController.fetchedObjects!.isEmpty {//pin.photos.isEmpty {
             //Check if there is already a fetch in progress...
             if pin.photoFetchTask != nil && pin.photoFetchTask!.state == .Running {
                 setImagesLoadingUIState(true)
@@ -102,29 +102,67 @@ class PhotoAlbumViewController: UIViewController {
             sharedContext.deleteObject(photo)
         }
         CoreDataStackManager.sharedInstance.saveContext()
+        if !checkIfDocsDirIsEmpty() {
+            print("Docs directory is NOT EMPTY after clearing photos")
+        }
         //re-fetch photos
         setImagesLoadingUIState(true)
+        print("About to re-FETCH in photo booth...")
         FlickrProvider.sharedInstance.getPhotos(pin, dataContext: sharedContext) { photosJson, error in
             self.processPhotosJson(self.pin, photosJson: photosJson, error: error)
         }
     }
-    
+    func checkIfDocsDirIsEmpty() -> Bool {
+        let documentsDirectoryURL: NSURL = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask).first!
+        let path = documentsDirectoryURL.path!
+        do {
+            let listOfFiles = try NSFileManager.defaultManager().contentsOfDirectoryAtPath(path)
+            listOfFiles.map( { print($0) })
+//            for fl in listOfFiles {
+//                
+//            }
+            return listOfFiles.isEmpty
+        } catch {
+            print("Error listing Documents directory files")
+            return false
+        }
+        
+    }
     
     func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
+        var emptyFetch = false
         if let photosJson = photosJson {
             dispatch_async(dispatch_get_main_queue()) {
-                let _: [Photo] = photosJson.map() {
+                let photos: [Photo] = photosJson.map() {
                     let photo = Photo(dictionary: $0, context: self.sharedContext)
                     photo.locationPin = pin
                     return photo
                 }
+                if photos.isEmpty {
+                    print("Photos json came up EMPTY in FINAL COMPLETION")
+                    emptyFetch = true
+                }
                 CoreDataStackManager.sharedInstance.saveContext()
             }
         } else {
+            emptyFetch = true
+            print("EMPTY JSON RETURNED")
             if let error = error {
                 print("Error fetching photos from PhotoBooth Scene: \(error.localizedDescription)")
             }
         }
+        dispatch_async(dispatch_get_main_queue()) {
+            self.setImagesLoadingUIState(false)
+            if emptyFetch {
+                self.emptyFetchAlert()
+            }
+        }
+    }
+    func emptyFetchAlert() {
+        let alert = UIAlertController(title: "Empty Fetch", message: "No photos retrieved", preferredStyle: .Alert)
+        let okAction = UIAlertAction(title: "OK", style: .Default, handler: nil)
+        alert.addAction(okAction)
+        self.presentViewController(alert, animated: true, completion: nil)
     }
     // MARK: UI Helpers
     

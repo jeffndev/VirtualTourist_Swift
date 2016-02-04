@@ -12,6 +12,9 @@ import CoreData
 class FlickrProvider {
     typealias CompletionHander = (result: AnyObject!, error: NSError?) -> Void
     
+    let PER_PAGE = 18
+    let MAX_RESULTS_RETURNED = 4000
+    
     static let sharedInstance = FlickrProvider()
     struct Caches {
         static let imageCache = ImageCache()
@@ -21,6 +24,9 @@ class FlickrProvider {
         return NSURLSession.sharedSession()
     }
     
+    var MAX_PAGE_TO_REQUEST: Int {
+        return Int(MAX_RESULTS_RETURNED/PER_PAGE)
+    }
     
     func getPhotos(pin: Pin, dataContext: NSManagedObjectContext, completion: (photosJson: [[String: AnyObject]]?, error: NSError?) -> Void) {
         let parameters = [FlickrProvider.Keys.LatitudeSearchParameter: pin.latitude,
@@ -36,6 +42,7 @@ class FlickrProvider {
                 completion(photosJson: nil, error: NSError(domain: "Calculated data page come up empty", code: 0, userInfo: nil))
                 return
             }
+            print(".........\nPAGE: \(page) to be fetched\n.........")
             pin.photoFetchTask = FlickrProvider.sharedInstance.searchForPhotosWithPageTask(page, searchParameters: parameters) { result, error in
                 guard error == nil else {
                     print("Error retrieving Photos for location: \(error)")
@@ -96,7 +103,8 @@ class FlickrProvider {
                 completion(page: nil, error: err)
                 return
             }
-            let randomPage = Int(arc4random_uniform(UInt32(pages)) + 1)
+            let randomPage = Int( arc4random_uniform( UInt32(min(pages, self.MAX_PAGE_TO_REQUEST)) ) + 1)
+            print("RANDOM PAGE TO FETCH: \(randomPage)")
             completion(page: randomPage, error: nil)
         }
         return task
@@ -109,10 +117,10 @@ class FlickrProvider {
         mutableParameters[FlickrProvider.Keys.MethodParameterForResource] = FlickrProvider.Resources.SearchPhotos
         
         let EXTRAS_MEDIUM_IMAGE_PATH = "url_m"
-        let SAFE_SEARCH = "1"
+        let SAFE_SEARCH = "3"
         let DATA_FORMAT = "json"
         let NO_JSON_CALLBACK = "1"
-        let PER_PAGE = 18
+        
         
         mutableParameters[FlickrProvider.Keys.ExtrasParameter] = EXTRAS_MEDIUM_IMAGE_PATH
         mutableParameters[FlickrProvider.Keys.SafeSearchParameter] = SAFE_SEARCH
@@ -131,6 +139,7 @@ class FlickrProvider {
                 print("Flickr API returned an error. See error code and message in \(result)")
                 return
             }
+            print(result)
             //Parse out the initial JSON, and implement retrieval algorithm on the data
             guard let photosInfo = result.valueForKey("photos") as? [String: AnyObject] else {
                 let err = NSError(domain: "Cannot parse out photos information in:\n\(result)", code: 0, userInfo: nil)
@@ -141,6 +150,11 @@ class FlickrProvider {
                 let err = NSError(domain: "Cannot parse out photos array in:\n\(result)", code: 0, userInfo: nil)
                 completion(result: nil, error: err)
                 return
+            }
+            if let retrievedPage = photosInfo["page"] as? Int {
+                print("RETRIEVED PAGE: \(retrievedPage)\nREQUESTED PAGE: \(page)")
+            } else {
+                print("PAGE was NOT RETURNED WITH FINAL Flickr Request")
             }
             completion(result: photos, error: nil)
         }

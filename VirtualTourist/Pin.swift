@@ -33,6 +33,7 @@ class Pin: NSManagedObject {
         didSet {
             if let taskToCancel = oldValue {
                 taskToCancel.cancel()
+                //print("Would have cancelled job")
             }
         }
     }

@@ -42,7 +42,11 @@ class ImageCache {
     //MARK: - deleting images
     func deleteImageFile(withIdentifier identifier: String) {
         let path = pathForIdentifier(identifier)
+        print("Path of file to delete: \(path)")
         inMemoryCache.removeObjectForKey(path)
+        if !NSFileManager.defaultManager().fileExistsAtPath(path) {
+            print("File did not exist at the path built: \(path)")
+        }
         do {
             try NSFileManager.defaultManager().removeItemAtPath(path)
         }catch let error as NSError {

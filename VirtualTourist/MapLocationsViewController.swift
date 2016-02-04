@@ -70,10 +70,13 @@ class MapLocationsViewController: UIViewController {
     func processPhotosJson(pin: Pin, photosJson: [[String: AnyObject]]?, error: NSError?) {
         if let photosJson = photosJson {
             dispatch_async(dispatch_get_main_queue()) {
-                let _: [Photo] = photosJson.map() {
+                let photos: [Photo] = photosJson.map() {
                     let photo = Photo(dictionary: $0, context: self.sharedContext)
                     photo.locationPin = pin
                     return photo
+                }
+                if photos.isEmpty {
+                    print("Photos json came up EMPTY in FINAL COMPLETION")
                 }
                 CoreDataStackManager.sharedInstance.saveContext()
             }
@@ -130,7 +133,7 @@ extension MapLocationsViewController: MKMapViewDelegate {
     }
     
     func longPressAction(gestureRecognizer: UIGestureRecognizer) {
-        if gestureRecognizer.state == .Began {
+        if gestureRecognizer.state == .Ended {
             print("long press received")
             let touchPoint = gestureRecognizer.locationInView(mapView)
             let coord: CLLocationCoordinate2D = mapView.convertPoint(touchPoint, toCoordinateFromView: mapView)
@@ -150,6 +153,7 @@ extension MapLocationsViewController: MKMapViewDelegate {
         guard let clickedPin = view.annotation else {
             return
         }
+        mapView.deselectAnnotation(clickedPin, animated: true)
         
         let fetchRequest = NSFetchRequest(entityName: "Pin")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "latitude", ascending: true)]
