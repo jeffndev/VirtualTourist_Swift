@@ -27,7 +27,7 @@ class ImageCache {
         let path = pathForIdentifier(identifier!)
         
         // First try the memory cache
-        if let image = inMemoryCache.objectForKey(path) as? UIImage {
+        if let image = inMemoryCache.objectForKey(identifier!) as? UIImage {
             return image
         }
         
@@ -42,15 +42,13 @@ class ImageCache {
     //MARK: - deleting images
     func deleteImageFile(withIdentifier identifier: String) {
         let path = pathForIdentifier(identifier)
-        print("Path of file to delete: \(path)")
-        inMemoryCache.removeObjectForKey(path)
-        if !NSFileManager.defaultManager().fileExistsAtPath(path) {
-            print("File did not exist at the path built: \(path)")
-        }
+        inMemoryCache.removeObjectForKey(identifier)
         do {
             try NSFileManager.defaultManager().removeItemAtPath(path)
         }catch let error as NSError {
-            print("could not remove image file: \(path): \(error.localizedDescription)")
+            if NSFileManager.defaultManager().fileExistsAtPath(path) {
+                print("could not remove existing image file: \(path): \(error.localizedDescription)")
+            }
         }
     }
     
@@ -61,7 +59,7 @@ class ImageCache {
         
         // If the image is nil, remove images from the cache
         if image == nil {
-            inMemoryCache.removeObjectForKey(path)
+            inMemoryCache.removeObjectForKey(identifier)
             
             do {
                 try NSFileManager.defaultManager().removeItemAtPath(path)
@@ -69,7 +67,7 @@ class ImageCache {
         }
         
         // Otherwise, keep the image in memory
-        inMemoryCache.setObject(image!, forKey: path)
+        inMemoryCache.setObject(image!, forKey: identifier)
         
         // And in documents directory
         let data = UIImagePNGRepresentation(image!)!

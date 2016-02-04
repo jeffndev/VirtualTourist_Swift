@@ -138,7 +138,7 @@ class FlickrProvider {
                 print("Flickr API returned an error. See error code and message in \(result)")
                 return
             }
-            print(result)
+            
             //Parse out the initial JSON, and implement retrieval algorithm on the data
             guard let photosInfo = result.valueForKey("photos") as? [String: AnyObject] else {
                 let err = NSError(domain: "Cannot parse out photos information in:\n\(result)", code: 0, userInfo: nil)
