@@ -72,7 +72,6 @@ class PhotoAlbumViewController: UIViewController {
         if fetchedResultsController.fetchedObjects!.isEmpty {
             //Check if there is already a fetch in progress...
             if pin.photoFetchTask != nil && pin.photoFetchTask!.state == .Running {
-                setImagesLoadingUIState(true)
                 print("Photos fetch in-progress, do not re-fetch, waiting...")
             } else {
                 //go get em...
@@ -188,7 +187,7 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionVie
         let cell = collectionView.dequeueReusableCellWithReuseIdentifier(cellReuseIdentifier, forIndexPath: indexPath) as! PhotoAlbumCell
         let photo = fetchedResultsController.objectAtIndexPath(indexPath) as! Photo
         configureCell(cell, photo: photo)
-        cell.backgroundColor = UIColor.blackColor()
+        cell.backgroundColor = UIColor.whiteColor()
         return cell
     }
     
@@ -199,7 +198,8 @@ extension PhotoAlbumViewController:  UICollectionViewDataSource, UICollectionVie
     }
     
     func configureCell(cell: PhotoAlbumCell, photo: Photo) {
-        var photoImage = UIImage(named: "placeHolder")
+        
+        var photoImage = UIImage(named: "photoDownloading")
         cell.imageView!.image = nil
         if photo.remoteImagePath == "" {
             //no image Image
